@@ -1,0 +1,56 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="ShopApp.AdminProductsWindow"
+        Icon="C:\Users\brawl\OneDrive\Рабочий стол\ShopApp\Assets\Icon.jpg"
+        Title="Магазин обуви - Товары (администратор)" Width="980" Height="720">
+  <DockPanel>
+    <!-- Верхняя панель: слева кнопки, справа заголовок -->
+    <Grid DockPanel.Dock="Top" Margin="10">
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="Auto"/>
+        <ColumnDefinition Width="*"/>
+      </Grid.ColumnDefinitions>
+
+      <StackPanel Orientation="Horizontal" Spacing="10">
+        <Image Source="C:\Users\brawl\OneDrive\Рабочий стол\ShopApp\Assets\Icon.jpg" Width="40" Height="40" VerticalAlignment="Center" Margin="0,0,6,0"/>
+        <Button x:Name="BackButton" Content="Назад" Width="100"/>
+        <Button x:Name="AddProductButton" Content="Добавить" Width="120"/>
+        <Button x:Name="EditProductButton" Content="Редактировать" Width="120"/>
+        <Button x:Name="DeleteProductButton" Content="Удалить" Width="120"/>
+      </StackPanel>
+
+      <TextBlock Grid.Column="1"
+                 Text="Товары (администратор)"
+                 FontSize="18"
+                 FontWeight="Bold"
+                 HorizontalAlignment="Right"
+                 VerticalAlignment="Center"/>
+    </Grid>
+
+    <!-- Панель фильтров и поиска -->
+    <StackPanel DockPanel.Dock="Top" Margin="10" Spacing="8">
+      <StackPanel Orientation="Horizontal" Spacing="10">
+        <TextBox x:Name="SearchBox"
+                 Width="350"
+                 Watermark="Поиск по названию, артикулу или описанию"/>
+        <Button x:Name="SearchButton" Content="Поиск" Width="100"/>
+      </StackPanel>
+      <StackPanel Orientation="Horizontal" Spacing="10">
+        <ComboBox x:Name="CategoryCombo" Width="220" />
+        <ComboBox x:Name="SortCombo" Width="220">
+          <ComboBoxItem Content="Без сортировки" IsSelected="True"/>
+          <ComboBoxItem Content="Цена ↑" Tag="price_asc"/>
+          <ComboBoxItem Content="Цена ↓" Tag="price_desc"/>
+          <ComboBoxItem Content="Скидка ↑" Tag="discount_asc"/>
+          <ComboBoxItem Content="Скидка ↓" Tag="discount_desc"/>
+          <ComboBoxItem Content="Количество ↓" Tag="qty_desc"/>
+        </ComboBox>
+      </StackPanel>
+    </StackPanel>
+
+    <ScrollViewer Margin="10" VerticalScrollBarVisibility="Auto">
+      <StackPanel x:Name="ProductsPanel" Spacing="12"/>
+    </ScrollViewer>
+  </DockPanel>
+</Window>
+

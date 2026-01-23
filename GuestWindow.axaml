@@ -1,0 +1,17 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="ShopApp.GuestWindow"
+        Icon="C:\Users\brawl\OneDrive\Рабочий стол\ShopApp\Assets\Icon.jpg"
+        Title=" Магазин обуви - Гостевой режим" Width="840" Height="640">
+  <DockPanel>
+    <StackPanel Orientation="Horizontal" DockPanel.Dock="Top" Margin="10" Spacing="10">
+      <Image Source="C:\Users\brawl\OneDrive\Рабочий стол\ShopApp\Assets\Icon.jpg" Width="40" Height="40" VerticalAlignment="Center" Margin="0,0,6,0"/>
+      <Button Content="Назад" Name="BackButton" Width="100"/>
+      <TextBlock Text="Просмотр товаров (гость)" VerticalAlignment="Center" FontSize="18" FontWeight="Bold"/>
+    </StackPanel>
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto" Margin="10">
+      <StackPanel Name="ProductsPanel" Spacing="12"/>
+    </ScrollViewer>
+  </DockPanel>
+</Window>

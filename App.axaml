@@ -1,0 +1,45 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="ShopApp.App"
+             RequestedThemeVariant="Default">
+
+  <Application.Resources>
+    <ResourceDictionary>
+      <Color x:Key="PrimaryBackgroundColor">#FFFFFFFF</Color>
+      <Color x:Key="SecondaryBackgroundColor">#7FFF00</Color>
+      <Color x:Key="AccentColor">#00FA9A</Color>
+
+      <SolidColorBrush x:Key="PrimaryBackgroundBrush" Color="{StaticResource PrimaryBackgroundColor}" />
+      <SolidColorBrush x:Key="SecondaryBackgroundBrush" Color="{StaticResource SecondaryBackgroundColor}" />
+      <SolidColorBrush x:Key="AccentBrush" Color="{StaticResource AccentColor}" />
+      <SolidColorBrush x:Key="TextBrush" Color="#000000" />
+    </ResourceDictionary>
+  </Application.Resources>
+
+  <Application.Styles>
+    <FluentTheme />
+
+    <!-- Подключаем стили для DataGrid, иначе он может не отображаться -->
+    <StyleInclude Source="avares://Avalonia.Controls.DataGrid/Themes/Fluent.xaml" />
+
+    <Style Selector="Window">
+      <Setter Property="Background" Value="{StaticResource PrimaryBackgroundBrush}" />
+    </Style>
+    <Style Selector="Button">
+      <Setter Property="Background" Value="{StaticResource AccentBrush}" />
+      <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+      <Setter Property="Padding" Value="8,4" />
+      <Setter Property="BorderBrush" Value="{StaticResource SecondaryBackgroundBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+    </Style>
+    <Style Selector="TextBlock">
+      <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+    </Style>
+    <Style Selector="TextBox">
+      <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+    </Style>
+    <Style Selector="ComboBox">
+      <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+    </Style>
+  </Application.Styles>
+</Application>

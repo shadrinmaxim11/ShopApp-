@@ -1,0 +1,34 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="ShopApp.MainWindow"
+        Icon="C:\Users\brawl\OneDrive\Рабочий стол\ShopApp\Assets\Icon.jpg"
+        Title=" Магазин обуви -  Окно авторизации" Width="420" Height="420">
+  <Border Padding="20">
+    <StackPanel Spacing="10">
+      <Image Source="C:\Users\brawl\OneDrive\Рабочий стол\ShopApp\Assets\Icon.jpg" Width="64" Height="64" HorizontalAlignment="Center" Margin="0,0,0,6"/>
+      <TextBlock Text="Добро пожаловать в магазин обуви" FontSize="18" FontWeight="Bold" HorizontalAlignment="Center"/>
+
+      <StackPanel Spacing="6">
+        <TextBlock Text="Логин"/>
+        <TextBox x:Name="LoginTextBox"/>
+      </StackPanel>
+
+      <StackPanel Spacing="6">
+        <TextBlock Text="Пароль"/>
+        <TextBox x:Name="PasswordInput"  PasswordChar="●"/>
+      </StackPanel>
+
+      <TextBlock x:Name="ErrorTextBlock"
+                 Foreground="Red"
+                 FontSize="12"
+                 TextWrapping="Wrap"
+                 IsVisible="False"/>
+
+      <StackPanel Orientation="Vertical" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="8" Margin="0,10,0,0">
+        <Button x:Name="LoginButton" Content="Войти" Width="140" Height="36"/>
+        <Button x:Name="GuestButton" Content="Гостевой режим" Width="140" Height="36"/>
+        <Button x:Name="BackButton" Content="Назад" Width="140" Height="36"/>
+      </StackPanel>
+    </StackPanel>
+  </Border>
+</Window>
