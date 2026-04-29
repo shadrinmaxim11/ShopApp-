@@ -1,0 +1,780 @@
+MainWindow.axaml: 
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:ShooesApp.ViewModels"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        MinWidth="700"
+  MinHeight="400"
+  Width="340"
+  Height="180"
+  d:DesignHeight="180"
+  d:DesignWidth="340"
+        x:Class="ShooesApp.Views.MainWindow"
+        x:DataType="vm:MainWindowViewModel"
+        Icon="/Assets/avalonia-logo.ico"
+        Title="ShooesApp">
+
+<Grid
+    Margin="10"
+    HorizontalAlignment="Center"
+    ColumnDefinitions="Auto,160"
+    RowDefinitions="Auto,Auto,Auto,Auto,Auto">
+
+    <!--  Лого + название  -->
+    <StackPanel
+      Grid.ColumnSpan="2"
+      HorizontalAlignment="Center"
+      Orientation="Horizontal"
+      Spacing="10">
+      <Image
+        Width="45"
+        VerticalAlignment="Center"
+        Source="/Assets/avalonia-logo.ico" />
+
+      <TextBlock
+        VerticalAlignment="Center"
+        FontSize="20"
+        Text="ООО Магазин Обуви" />
+    </StackPanel>
+
+    <!--  Логин  -->
+    <TextBlock
+      Grid.Row="1"
+      Margin="0,8,0,0"
+      HorizontalAlignment="Right"
+      VerticalAlignment="Center"
+      Text="Логин:" />
+
+    <TextBox
+      Name="UserBox"
+      Grid.Row="1"
+      Grid.Column="1"
+      Width="160" />
+
+    <!--  Пароль  -->
+    <TextBlock
+      Grid.Row="2"
+      Margin="0,8,0,0"
+      HorizontalAlignment="Right"
+      VerticalAlignment="Center"
+      Text="Пароль:" />
+
+    <TextBox
+      Name="PassBox"
+      Grid.Row="2"
+      Grid.Column="1"
+      Width="160" />
+
+    <!--  Кнопки  -->
+    <StackPanel
+      Grid.Row="3"
+      Grid.ColumnSpan="2"
+      Margin="0,12,0,0"
+      HorizontalAlignment="Center"
+      Orientation="Horizontal"
+      Spacing="8">
+      <Button
+        Width="90"
+        Background="#00FA9A"
+        Click="LoginButton_Click"
+        Content="Вход" />
+      <Button
+        Width="90"
+        Background="#00FA9A"
+        Click="ExitButton_Click"
+        Content="Выход" />
+        <Button Content="Гость" Width="90" Click="GuestButton_Click"/>
+    </StackPanel>
+
+
+  </Grid>
+</Window>
+
+
+MainWindow.cs: 
+using Avalonia.Controls;
+using System;
+using Avalonia.Interactivity;
+using Npgsql;
+using System.Threading.Tasks;
+namespace ShooesApp.Views;
+
+public partial class MainWindow : Window
+{
+
+    public MainWindow()
+    {
+        InitializeComponent();
+     
+    }
+    private async void LoginButton_Click(object? sender, RoutedEventArgs e)
+
+    {
+
+        var login = UserBox.Text;
+
+        var password = PassBox.Text;
+
+        if (string.IsNullOrEmpty(login) || string.IsNullOrEmpty(password))
+
+        {
+
+            await MessageBox("Введите логин и пароль");
+
+            return;
+
+        }
+
+
+
+        var connStr = "Host=localhost;Port=5432;Username=postgres;Password=1;Database=botinki";
+
+        await using var conn = new NpgsqlConnection(connStr);
+
+        await conn.OpenAsync();
+
+
+
+        var query = @"
+SELECT user_id, role_id, login, password, first_name, last_name, middle_name
+FROM users 
+WHERE login = @l AND password = @p";
+
+
+
+        var cmd = new NpgsqlCommand(query, conn);
+
+        cmd.Parameters.AddWithValue("l", login);
+
+        cmd.Parameters.AddWithValue("p", password);
+
+
+
+        using var reader = await cmd.ExecuteReaderAsync();
+
+
+
+        if (await reader.ReadAsync())
+
+        {
+
+            var roleIdObj = reader["role_id"];
+
+            var roleId = Convert.ToInt32(roleIdObj);
+
+
+
+            if (roleId == 1)
+
+            {
+
+                // Менеджер 
+
+                new MenuWindow().Show();
+
+                this.Close();
+
+            }
+
+            else if (roleId == 2)
+
+            {
+
+                // Менеджер (по данным из базы) 
+
+                new MenuWindow().Show();
+
+                this.Close();
+
+            }
+
+            else if (roleId == 3)
+
+            {
+
+                // Авторизированный клиент 
+
+                var firstName = reader.IsDBNull(reader.GetOrdinal("first_name")) ? string.Empty : reader.GetString(reader.GetOrdinal("first_name"));
+                var lastName = reader.IsDBNull(reader.GetOrdinal("last_name")) ? string.Empty : reader.GetString(reader.GetOrdinal("last_name"));
+                var middleName = reader.IsDBNull(reader.GetOrdinal("middle_name")) ? string.Empty : reader.GetString(reader.GetOrdinal("middle_name"));
+                var fullName = $"{lastName} {firstName} {middleName}".Trim();
+                new ClientWindow(fullName).Show();
+
+                this.Close();
+
+            }
+
+            else
+
+            {
+
+                await MessageBox("Неизвестная роль пользователя");
+
+            }
+
+        }
+
+        else
+
+        {
+
+            await MessageBox("Неверный логин или пароль");
+
+        }
+
+    }
+
+    private async Task MessageBox(string text)
+
+    {
+
+        var win = new Window { Content = new TextBlock { Text = text }, Width = 300, Height = 100 };
+
+        await win.ShowDialog(this);
+
+    }
+
+    private void ExitButton_Click(object? s, RoutedEventArgs e)
+    {
+        Close();
+    }
+    private void GuestButton_Click(object? s, RoutedEventArgs e)
+    {
+        var guestwin = new GuestWindow();
+        guestwin.Show();
+        Close();
+
+    }
+
+
+}
+
+
+
+
+
+
+GuestWindow.axaml: 
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+        x:Class="ShooesApp.GuestWindow"
+        Title="GuestWindow">
+<Grid>
+    <Grid.RowDefinitions>Auto,*</Grid.RowDefinitions>
+
+    <StackPanel
+      Margin="10"
+      HorizontalAlignment="Center"
+      VerticalAlignment="Center"
+      Orientation="Horizontal"
+      Spacing="20">
+      <Button
+        Width="90"
+        Background="#00FA9A"
+        Click="BackButton_Click"
+        Content="Назад" />
+      <TextBlock
+        VerticalAlignment="Center"
+        FontSize="20"
+        Text="Просмотр товаров" />
+    </StackPanel>
+
+    <ScrollViewer
+      Grid.Row="1"
+      Margin="10"
+      HorizontalContentAlignment="Center"
+      HorizontalScrollBarVisibility="Disabled"
+      VerticalScrollBarVisibility="Auto">
+      <StackPanel
+        x:Name="CardsPanel"
+        HorizontalAlignment="Center"
+        Spacing="10" />
+    </ScrollViewer>
+  </Grid>
+</Window>
+
+GuestWindow.axaml.cs: 
+using Avalonia.Controls;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using Avalonia;
+using Avalonia.Interactivity;
+using Avalonia.Layout;
+using Avalonia.Media;
+using Avalonia.Media.Imaging;
+using Npgsql;
+using ShooesApp.Views;
+namespace ShooesApp;
+
+public partial class GuestWindow : Window
+{
+    private readonly List<Product> _products;
+
+    public GuestWindow()
+    {
+        InitializeComponent();
+        _products = LoadProducts();
+        foreach (var p in _products)
+        {
+            CardsPanel.Children.Add(CreateCard(p));
+        }
+    }
+    private void BackButton_Click(object? sender, RoutedEventArgs e)
+    {
+        new MainWindow().Show();
+        Close();
+    }
+
+    private static Control CreateCard(Product product)
+    {
+        var photoBox = new Border
+        {
+            BorderThickness = new Thickness(1),
+            BorderBrush = Brushes.Black,
+            Margin = new Thickness(0, 0, 8, 0),
+            Width = 120,
+            Height = 150,
+            Child = new Image
+            {
+                Source = GetPhoto(product.Photo),
+                Stretch = Stretch.Uniform,
+                VerticalAlignment = VerticalAlignment.Center,
+                HorizontalAlignment = HorizontalAlignment.Center
+            }
+        };
+        Grid.SetColumn(photoBox, 0);
+
+        var infoSection = new StackPanel
+        {
+            Spacing = 6,
+            Children =
+            {
+                new TextBlock { Text = $"{product.Category} | {product.ProductName}", FontSize = 18, FontWeight = FontWeight.SemiBold },
+                new TextBlock { Text = $"Описание: {product.Description}" },
+                new TextBlock { Text = $"Производитель: {product.Manufacturer}" },
+                new TextBlock { Text = $"Поставщик: {product.Supplier}" },
+                CreatePricePanel(product),
+                new TextBlock { Text = $"Единица измерения: {product.Unit}" },
+                new TextBlock { Text = $"Количество на складе: {product.StockQty}" }
+            }
+        };
+        Grid.SetColumn(infoSection, 1);
+
+        var discountBox = new Border
+        {
+            BorderThickness = new Thickness(1),
+            BorderBrush = Brushes.Black,
+            Padding = new Thickness(8),
+            Child = new StackPanel
+            {
+                Spacing = 4,
+                VerticalAlignment = VerticalAlignment.Center,
+                Children =
+                {
+                    new TextBlock { Text = "Действующая скидка", FontWeight = FontWeight.SemiBold, TextAlignment = TextAlignment.Center },
+                    new TextBlock { Text = $"{product.Discount}%", FontSize = 24, FontWeight = FontWeight.Bold, TextAlignment = TextAlignment.Center }
+                }
+            }
+        };
+        Grid.SetColumn(discountBox, 2);
+
+        var grid = new Grid
+        {
+            ColumnDefinitions = new ColumnDefinitions("120,*,120"),
+            Children = { photoBox, infoSection, discountBox }
+        };
+
+        return new Border
+        {
+            Padding = new Thickness(8),
+            CornerRadius = new CornerRadius(6),
+            BorderThickness = new Thickness(1),
+            BorderBrush = Brushes.Black,
+            Background = product.StockQty == 0
+                ? Brushes.LightBlue
+                : product.Discount > 15
+                    ? new SolidColorBrush(Color.Parse("#2E8B57"))
+                    : Brushes.White,
+            Child = grid
+        };
+    }
+
+    private static IImage GetPhoto(string? photo)
+    {
+        var defaultPath = @"C:\Users\brawl\OneDrive\Рабочий стол\demo\Botinki\Assets\Icon.png";
+        var filename = string.IsNullOrWhiteSpace(photo) ? "Icon.png" : photo;
+        var candidates = new[]
+        {
+            Path.Combine(AppContext.BaseDirectory, "Assets", filename),
+            Path.Combine(Directory.GetCurrentDirectory(), "Assets", filename),
+            Path.Combine(AppContext.BaseDirectory, filename),
+            defaultPath
+        };
+
+        foreach (var candidate in candidates)
+        {
+            if (!string.IsNullOrWhiteSpace(candidate) && File.Exists(candidate))
+            {
+                return new Bitmap(candidate);
+            }
+        }
+
+        return new Bitmap(defaultPath);
+    }
+
+    private static Control CreatePricePanel(Product product)
+    {
+        var pricePanel = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
+        if (product.Discount > 0)
+        {
+            pricePanel.Children.Add(new TextBlock { Text = $"{product.Price:F2} ₽", Foreground = Brushes.Red, TextDecorations = TextDecorations.Strikethrough });
+            pricePanel.Children.Add(new TextBlock { Text = $"{product.FinalPrice:F2} ₽", Foreground = Brushes.Black });
+        }
+        else
+        {
+            pricePanel.Children.Add(new TextBlock { Text = $"{product.Price:F2} ₽", Foreground = Brushes.Black });
+        }
+        return pricePanel;
+    }
+
+    private static List<Product> LoadProducts()
+    {
+        var products = new List<Product>();
+        var connStr = "Host=localhost;Port=5432;Username=postgres;Password=1;Database=botinki";
+        using var conn = new NpgsqlConnection(connStr);
+        conn.Open();
+        using var cmd = new NpgsqlCommand("select article,product_name,unit,price,supplier,manufacturer,category,discount,stock_qty,description,photo from product_names order by article", conn);
+        using var reader = cmd.ExecuteReader();
+        while (reader.Read())
+        {
+            products.Add(new Product(
+                reader.GetString(0),
+                reader.GetString(1),
+                reader.IsDBNull(2) ? string.Empty : reader.GetString(2),
+                reader.GetDecimal(3),
+                reader.IsDBNull(4) ? string.Empty : reader.GetString(4),
+                reader.IsDBNull(5) ? string.Empty : reader.GetString(5),
+                reader.IsDBNull(6) ? string.Empty : reader.GetString(6),
+                reader.IsDBNull(7) ? 0 : reader.GetInt32(7),
+                reader.IsDBNull(8) ? 0 : reader.GetInt32(8),
+                reader.IsDBNull(9) ? string.Empty : reader.GetString(9),
+                reader.IsDBNull(10) ? null : reader.GetString(10)
+            ));
+        }
+        return products;
+    }
+
+    private record Product(string Article, string ProductName, string Unit, decimal Price, string Supplier, string Manufacturer, string Category, int Discount, int StockQty, string Description, string? Photo)
+    {
+        public decimal FinalPrice => Price * (100 - Discount) / 100;
+    }
+}
+
+
+
+ClientWindow.axaml: 
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+        x:Class="ShooesApp.ClientWindow"
+        Title="ClientWindow">
+<Grid>
+    <Grid.RowDefinitions>Auto,*</Grid.RowDefinitions>
+
+    <StackPanel
+      Margin="10"
+      HorizontalAlignment="Center"
+      VerticalAlignment="Center"
+      Orientation="Vertical"
+      Spacing="10">
+      <StackPanel
+        HorizontalAlignment="Center"
+        Orientation="Horizontal"
+        Spacing="20">
+        <Button
+          Width="90"
+          Background="#00FA9A"
+          Click="BACKButton_Click"
+          Content="Назад" />
+        <TextBlock
+          VerticalAlignment="Center"
+          FontSize="20"
+          Text="Просмотр товаров" />
+      </StackPanel>
+      <TextBlock
+        x:Name="WelcomeText"
+        HorizontalAlignment="Center"
+        FontSize="16"
+        FontWeight="SemiBold"
+        Text="Добро пожаловать!" />
+    </StackPanel>
+
+    <ScrollViewer
+      Grid.Row="1"
+      Margin="10"
+      HorizontalContentAlignment="Center"
+      HorizontalScrollBarVisibility="Disabled"
+      VerticalScrollBarVisibility="Auto">
+      <StackPanel
+        x:Name="CardsPanel"
+        HorizontalAlignment="Center"
+        Spacing="10" />
+    </ScrollViewer>
+  </Grid></Window>
+
+
+
+ClientWindow.axaml.cs:
+using Avalonia.Controls;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using Avalonia;
+using Avalonia.Interactivity;
+using Avalonia.Layout;
+using Avalonia.Media;
+using Avalonia.Media.Imaging;
+using Npgsql;
+using ShooesApp.Views;
+
+namespace ShooesApp;
+
+public partial class ClientWindow : Window
+{
+    private readonly List<Product> _products;
+
+    public ClientWindow()
+        : this(string.Empty)
+    {
+    }
+
+    public ClientWindow(string fullName)
+    {
+        InitializeComponent();
+
+        if (!string.IsNullOrWhiteSpace(fullName))
+        {
+            WelcomeText.Text = $"Добро пожаловать, {fullName}!";
+        }
+
+        _products = LoadProducts();
+        foreach (var p in _products)
+        {
+            CardsPanel.Children.Add(CreateCard(p));
+        }
+    }
+    private void BACKButton_Click(object? s, RoutedEventArgs e)
+    {
+        new MainWindow().Show();
+        this.Close();
+    }
+
+    private static Control CreateCard(Product product)
+    {
+        var photoBox = new Border
+        {
+            BorderThickness = new Thickness(1),
+            BorderBrush = Brushes.Black,
+            Margin = new Thickness(0, 0, 8, 0),
+            Width = 120,
+            Height = 150,
+            Child = new Image
+            {
+                Source = GetPhoto(product.Photo),
+                Stretch = Stretch.Uniform,
+                VerticalAlignment = VerticalAlignment.Center,
+                HorizontalAlignment = HorizontalAlignment.Center
+            }
+        };
+        Grid.SetColumn(photoBox, 0);
+
+        var infoSection = new StackPanel
+        {
+            Spacing = 6,
+            Children =
+            {
+                new TextBlock { Text = $"{product.Category} | {product.ProductName}", FontSize = 18, FontWeight = FontWeight.SemiBold },
+                new TextBlock { Text = $"Описание: {product.Description}" },
+                new TextBlock { Text = $"Производитель: {product.Manufacturer}" },
+                new TextBlock { Text = $"Поставщик: {product.Supplier}" },
+                CreatePricePanel(product),
+                new TextBlock { Text = $"Единица измерения: {product.Unit}" },
+                new TextBlock { Text = $"Количество на складе: {product.StockQty}" }
+            }
+        };
+        Grid.SetColumn(infoSection, 1);
+
+        var discountBox = new Border
+        {
+            BorderThickness = new Thickness(1),
+            BorderBrush = Brushes.Black,
+            Padding = new Thickness(8),
+            Child = new StackPanel
+            {
+                Spacing = 4,
+                VerticalAlignment = VerticalAlignment.Center,
+                Children =
+                {
+                    new TextBlock { Text = "Действующая скидка", FontWeight = FontWeight.SemiBold, TextAlignment = TextAlignment.Center },
+                    new TextBlock { Text = $"{product.Discount}%", FontSize = 24, FontWeight = FontWeight.Bold, TextAlignment = TextAlignment.Center }
+                }
+            }
+        };
+        Grid.SetColumn(discountBox, 2);
+
+        var grid = new Grid
+        {
+            ColumnDefinitions = new ColumnDefinitions("120,*,120"),
+            Children = { photoBox, infoSection, discountBox }
+        };
+
+        return new Border
+        {
+            Padding = new Thickness(8),
+            CornerRadius = new CornerRadius(6),
+            BorderThickness = new Thickness(1),
+            BorderBrush = Brushes.Black,
+            Background = product.StockQty == 0
+                ? Brushes.LightBlue
+                : product.Discount > 15
+                    ? new SolidColorBrush(Color.Parse("#2E8B57"))
+                    : Brushes.White,
+            Child = grid
+        };
+    }
+
+    private static IImage GetPhoto(string? photo)
+    {
+        var defaultPath = @"C:\Users\brawl\OneDrive\Рабочий стол\demo\Botinki\Assets\Icon.png";
+        var filename = string.IsNullOrWhiteSpace(photo) ? "Icon.png" : photo;
+        var candidates = new[]
+        {
+            Path.Combine(AppContext.BaseDirectory, "Assets", filename),
+            Path.Combine(Directory.GetCurrentDirectory(), "Assets", filename),
+            Path.Combine(AppContext.BaseDirectory, filename),
+            defaultPath
+        };
+
+        foreach (var candidate in candidates)
+        {
+            if (!string.IsNullOrWhiteSpace(candidate) && File.Exists(candidate))
+            {
+                return new Bitmap(candidate);
+            }
+        }
+
+        return new Bitmap(defaultPath);
+    }
+
+    private static Control CreatePricePanel(Product product)
+    {
+        var pricePanel = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
+        if (product.Discount > 0)
+        {
+            pricePanel.Children.Add(new TextBlock { Text = $"{product.Price:F2} ₽", Foreground = Brushes.Red, TextDecorations = TextDecorations.Strikethrough });
+            pricePanel.Children.Add(new TextBlock { Text = $"{product.FinalPrice:F2} ₽", Foreground = Brushes.Black });
+        }
+        else
+        {
+            pricePanel.Children.Add(new TextBlock { Text = $"{product.Price:F2} ₽", Foreground = Brushes.Black });
+        }
+        return pricePanel;
+    }
+
+    private static List<Product> LoadProducts()
+    {
+        var products = new List<Product>();
+        var connStr = "Host=localhost;Port=5432;Username=postgres;Password=1;Database=botinki";
+        using var conn = new NpgsqlConnection(connStr);
+        conn.Open();
+        using var cmd = new NpgsqlCommand("select article,product_name,unit,price,supplier,manufacturer,category,discount,stock_qty,description,photo from product_names order by article", conn);
+        using var reader = cmd.ExecuteReader();
+        while (reader.Read())
+        {
+            products.Add(new Product(
+                reader.GetString(0),
+                reader.GetString(1),
+                reader.IsDBNull(2) ? string.Empty : reader.GetString(2),
+                reader.GetDecimal(3),
+                reader.IsDBNull(4) ? string.Empty : reader.GetString(4),
+                reader.IsDBNull(5) ? string.Empty : reader.GetString(5),
+                reader.IsDBNull(6) ? string.Empty : reader.GetString(6),
+                reader.IsDBNull(7) ? 0 : reader.GetInt32(7),
+                reader.IsDBNull(8) ? 0 : reader.GetInt32(8),
+                reader.IsDBNull(9) ? string.Empty : reader.GetString(9),
+                reader.IsDBNull(10) ? null : reader.GetString(10)
+            ));
+        }
+        return products;
+    }
+
+    private record Product(string Article, string ProductName, string Unit, decimal Price, string Supplier, string Manufacturer, string Category, int Discount, int StockQty, string Description, string? Photo)
+    {
+        public decimal FinalPrice => Price * (100 - Discount) / 100;
+    }
+}
+
+
+
+
+
+
+
+select * from users
+CREATE TABLE product_names (
+    article TEXT PRIMARY KEY,
+    product_name TEXT NOT NULL,
+    unit TEXT,
+    price NUMERIC(10,2),
+    supplier TEXT,
+    manufacturer TEXT,
+    category TEXT,
+    discount INTEGER,
+    stock_qty INTEGER,
+    description TEXT,
+    photo TEXT
+);
+
+
+INSERT INTO product_names (
+    article, product_name, unit, price, supplier, manufacturer,
+    category, discount, stock_qty, description, photo
+) VALUES
+('А112Т4','Ботинки','шт.',4990,'Kari','Kari','Женская обувь',3,6,'Женские Ботинки демисезонные kari','1.jpg'),
+('F635R4','Ботинки','шт.',3244,'Обувь для вас','Marco Tozzi','Женская обувь',2,13,'Ботинки Marco Tozzi женские демисезонные, размер 39, цвет бежевый','2.jpg'),
+('H782T5','Туфли','шт.',4499,'Kari','Kari','Мужская обувь',4,5,'Туфли kari мужские классика MYZ21AW-450A, размер 43, цвет: черный','3.jpg'),
+('G783F5','Ботинки','шт.',5900,'Kari','Рос','Мужская обувь',2,8,'Мужские ботинки Рос-Обувь кожаные с натуральным мехом','4.jpg'),
+('J384T6','Ботинки','шт.',3800,'Обувь для вас','Rieker','Мужская обувь',2,16,'B3430/14 Полуботинки мужские Rieker','5.jpg'),
+('D572U8','Кроссовки','шт.',4100,'Обувь для вас','Рос','Мужская обувь',3,6,'129615-4 Кроссовки мужские','6.jpg'),
+('F572H7','Туфли','шт.',2700,'Kari','Marco Tozzi','Женская обувь',2,14,'Туфли Marco Tozzi женские летние, размер 39, цвет черный','7.jpg'),
+('D329H3','Полуботинки','шт.',1890,'Обувь для вас','Alessio Nesca','Женская обувь',4,4,'Полуботинки Alessio Nesca женские 3-30797-47, размер 37, цвет: бордовый','8.jpg'),
+('B320R5','Туфли','шт.',4300,'Kari','Rieker','Женская обувь',2,6,'Туфли Rieker женские демисезонные, размер 41, цвет коричневый','9.jpg'),
+('G432E4','Туфли','шт.',2800,'Kari','Kari','Женская обувь',3,15,'Туфли kari женские TR-YR-413017, размер 37, цвет: черный','10.jpg'),
+('S213E3','Полуботинки','шт.',2156,'Обувь для вас','CROSBY','Мужская обувь',3,6,'407700/01-01 Полуботинки мужские CROSBY',NULL),
+('E482R4','Полуботинки','шт.',1800,'Kari','Kari','Женская обувь',2,14,'Полуботинки kari женские MYZ20S-149, размер 41, цвет: черный',NULL),
+('S634B5','Кеды','шт.',5500,'Обувь для вас','CROSBY','Мужская обувь',3,0,'Кеды Caprice мужские демисезонные, размер 42, цвет черный',NULL),
+('K345R4','Полуботинки','шт.',2100,'Обувь для вас','CROSBY','Мужская обувь',2,3,'407700/01-02 Полуботинки мужские CROSBY',NULL),
+('O754F4','Туфли','шт.',5400,'Обувь для вас','Rieker','Женская обувь',4,18,'Туфли женские демисезонные Rieker артикул 55073-68/37',NULL),
+('G531F4','Ботинки','шт.',6600,'Kari','Kari','Женская обувь',12,9,'Ботинки женские зимние ROMER арт. 893167-01 Черный',NULL),
+('J542F5','Тапочки','шт.',500,'Kari','Kari','Мужская обувь',13,0,'Тапочки мужские Арт.70701-55-67син р.41',NULL),
+('B431R5','Ботинки','шт.',2700,'Обувь для вас','Rieker','Мужская обувь',2,5,'Мужские кожаные ботинки/мужские ботинки',NULL),
+('P764G4','Туфли','шт.',6800,'Kari','CROSBY','Женская обувь',15,15,'Туфли женские, ARGO, размер 38',NULL),
+('C436G5','Ботинки','шт.',10200,'Kari','Alessio Nesca','Женская обувь',15,9,'Ботинки женские, ARGO, размер 40',NULL),
+('F427R5','Ботинки','шт.',11800,'Обувь для вас','Rieker','Женская обувь',15,11,'Ботинки на молнии с декоративной пряжкой FRAU',NULL),
+('N457T5','Полуботинки','шт.',4600,'Kari','CROSBY','Женская обувь',3,13,'Полуботинки Ботинки черные зимние, мех',NULL),
+('D364R4','Туфли','шт.',12400,'Kari','Kari','Женская обувь',16,5,'Туфли Luiza Belly женские Kate-lazo черные из натуральной замши',NULL),
+('S326R5','Тапочки','шт.',9900,'Обувь для вас','CROSBY','Мужская обувь',17,15,'Мужские кожаные тапочки "Профиль С.Дали"',NULL),
+('L754R4','Полуботинки','шт.',1700,'Kari','Kari','Женская обувь',2,7,'Полуботинки kari женские WB2020SS-26, размер 38, цвет: черный',NULL),
+('M542T5','Кроссовки','шт.',2800,'Обувь для вас','Rieker','Мужская обувь',18,3,'Кроссовки мужские TOFA',NULL),
+('D268G5','Туфли','шт.',4399,'Обувь для вас','Rieker','Женская обувь',3,12,'Туфли Rieker женские демисезонные, размер 36, цвет коричневый',NULL),
+('T324F5','Сапоги','шт.',4699,'Kari','CROSBY','Женская обувь',2,5,'Сапоги замша Цвет: синий',NULL),
+('K358H6','Тапочки','шт.',599,'Kari','Rieker','Мужская обувь',20,2,'Тапочки мужские син р.41',NULL),
+('H535R5','Ботинки','шт.',2300,'Обувь для вас','Rieker','Женская обувь',2,7,'Женские Ботинки демисезонные',NULL);
